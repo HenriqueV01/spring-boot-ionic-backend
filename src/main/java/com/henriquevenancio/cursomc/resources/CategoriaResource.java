@@ -4,80 +4,103 @@ import java.net.URI;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.henriquevenancio.cursomc.domain.Categoria;
 import com.henriquevenancio.cursomc.dto.CategoriaDTO;
+import com.henriquevenancio.cursomc.resources.exception.StandardError;
+import com.henriquevenancio.cursomc.resources.exception.ValidationError;
 import com.henriquevenancio.cursomc.services.CategoriaService;
 
 @RestController
-@RequestMapping(value="/categorias")
+@RequestMapping(value = "/categorias")
 public class CategoriaResource {
-	
+
 	@Autowired
 	private CategoriaService service;
 	
-	@RequestMapping(value="/{id}", method=RequestMethod.GET)
-	//public ResponseEntity<?> find(@PathVariable Integer id) {
+	//Método retirado do ResourceExceptionHandler.
+	@ResponseStatus(HttpStatus.BAD_REQUEST)
+	@ExceptionHandler(MethodArgumentNotValidException.class)
+	// @ExceptionHandler(Exception.class)
+	public ResponseEntity<StandardError> validation(MethodArgumentNotValidException e, HttpServletRequest request) {
+
+		ValidationError err = new ValidationError(HttpStatus.BAD_REQUEST.value(), "Erro de validação",
+				System.currentTimeMillis());
+
+		for (FieldError x : e.getBindingResult().getFieldErrors()) {
+			err.addError(x.getField(), x.getDefaultMessage());
+		}
+
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(err);
+	}
+
+	@RequestMapping(value = "/{id}", method = RequestMethod.GET)
+	// public ResponseEntity<?> find(@PathVariable Integer id) {
 	public ResponseEntity<Categoria> find(@PathVariable Integer id) {
-		Categoria obj = service.find(id);		
-		
+		Categoria obj = service.find(id);
+
 		return ResponseEntity.ok().body(obj);
 	}
-	
-	@RequestMapping(method=RequestMethod.POST)
-	public ResponseEntity<Void> insert(@Valid @RequestBody CategoriaDTO objDto){
+
+	@RequestMapping(method = RequestMethod.POST)
+	public ResponseEntity<Void> insert(@Valid @RequestBody CategoriaDTO objDto) {
 		Categoria obj = service.fromDTO(objDto);
 		obj = service.insert(obj);
-		//O método precisa fornecer a URI do novo recurso inserido.
+		// O método precisa fornecer a URI do novo recurso inserido.
 		URI uri = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(obj.getId()).toUri();
 		return ResponseEntity.created(uri).build();
 	}
-	
-	@RequestMapping(value="/{id}", method=RequestMethod.PUT)
-	public ResponseEntity<Void> update(@Valid @RequestBody CategoriaDTO objDto, @PathVariable Integer id){
+
+	@RequestMapping(value = "/{id}", method = RequestMethod.PUT)
+	public ResponseEntity<Void> update(@Valid @RequestBody CategoriaDTO objDto, @PathVariable Integer id) {
 		Categoria obj = service.fromDTO(objDto);
 		obj.setId(id);
 		obj = service.update(obj);
 		return ResponseEntity.noContent().build();
 	}
-	
-	@RequestMapping(value="/{id}", method=RequestMethod.DELETE)
-	//public ResponseEntity<?> find(@PathVariable Integer id) {
+
+	@RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
+	// public ResponseEntity<?> find(@PathVariable Integer id) {
 	public ResponseEntity<Void> delete(@PathVariable Integer id) {
 		service.delete(id);
 		return ResponseEntity.noContent().build();
 	}
-	
-	@RequestMapping(method=RequestMethod.GET)
+
+	@RequestMapping(method = RequestMethod.GET)
 	public ResponseEntity<List<CategoriaDTO>> findAll() {
 		List<Categoria> list = service.findAll();
-		List<CategoriaDTO> listDto =  list.stream().map(obj -> new CategoriaDTO(obj)).collect(Collectors.toList());
-		
+		List<CategoriaDTO> listDto = list.stream().map(obj -> new CategoriaDTO(obj)).collect(Collectors.toList());
+
 		return ResponseEntity.ok().body(listDto);
 	}
-	@RequestMapping(value="/page", method=RequestMethod.GET)
-	public ResponseEntity<Page<CategoriaDTO>> findPage(
-			@RequestParam(value="page", defaultValue="0") Integer page,
-			@RequestParam(value="linesPerPage", defaultValue="24")Integer linesPerPage,
-			@RequestParam(value="orderBy", defaultValue="nome")String orderBy,
-			@RequestParam(value="direction", defaultValue="ASC")String direction) {
+
+	@RequestMapping(value = "/page", method = RequestMethod.GET)
+	public ResponseEntity<Page<CategoriaDTO>> findPage(@RequestParam(value = "page", defaultValue = "0") Integer page,
+			@RequestParam(value = "linesPerPage", defaultValue = "24") Integer linesPerPage,
+			@RequestParam(value = "orderBy", defaultValue = "nome") String orderBy,
+			@RequestParam(value = "direction", defaultValue = "ASC") String direction) {
 		Page<Categoria> list = service.findPage(page, linesPerPage, orderBy, direction);
-		Page<CategoriaDTO> listDto =  list.map(obj -> new CategoriaDTO(obj));
-		
+		Page<CategoriaDTO> listDto = list.map(obj -> new CategoriaDTO(obj));
+
 		return ResponseEntity.ok().body(listDto);
 	}
-	
 
 }
