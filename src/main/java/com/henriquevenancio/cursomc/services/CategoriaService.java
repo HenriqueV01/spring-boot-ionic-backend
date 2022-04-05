@@ -36,8 +36,9 @@ public class CategoriaService {
 	}
 	
 	public Categoria update(Categoria obj) {
-		find(obj.getId());
-		return repo.save(obj);
+		Categoria newCategoria = find(obj.getId());
+		updateData(newCategoria, obj);
+		return repo.save(newCategoria);
 	}
 	
 	public void delete(Integer id) {
@@ -61,6 +62,10 @@ public class CategoriaService {
 	
 	public Categoria fromDTO(CategoriaDTO objDto) {
 		return new Categoria(objDto.getId(), objDto.getNome());
+	}
+	
+	private void updateData(Categoria newcliente, Categoria cliente) {
+		newcliente.setNome(cliente.getNome());
 	}
 
 }
