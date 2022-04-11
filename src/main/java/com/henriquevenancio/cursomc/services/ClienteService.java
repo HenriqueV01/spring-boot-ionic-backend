@@ -14,11 +14,13 @@ import org.springframework.transaction.annotation.Transactional;
 import com.henriquevenancio.cursomc.domain.Cidade;
 import com.henriquevenancio.cursomc.domain.Cliente;
 import com.henriquevenancio.cursomc.domain.Endereco;
+import com.henriquevenancio.cursomc.domain.Pedido;
 import com.henriquevenancio.cursomc.domain.enums.TipoCliente;
 import com.henriquevenancio.cursomc.dto.ClienteDTO;
 import com.henriquevenancio.cursomc.dto.ClienteNewDTO;
 import com.henriquevenancio.cursomc.repositories.ClienteRepository;
 import com.henriquevenancio.cursomc.repositories.EnderecoRepository;
+import com.henriquevenancio.cursomc.repositories.PedidoRepository;
 import com.henriquevenancio.cursomc.services.exceptions.DataIntegrityException;
 import com.henriquevenancio.cursomc.services.exceptions.ObjectNotFoundException;
 
@@ -30,6 +32,9 @@ public class ClienteService {
 	
 	@Autowired
 	private EnderecoRepository enderecoRepository;
+	
+	@Autowired
+	private PedidoRepository pedidoRepository;
 	
 	public Cliente find(Integer id) {
 		
@@ -71,6 +76,12 @@ public class ClienteService {
 	public Page<Cliente> findPage(Integer page, Integer linesPerPage, String orderBy, String direction){
 		PageRequest pageRequest = PageRequest.of(page, linesPerPage, Direction.valueOf(direction), orderBy);
 		return repo.findAll(pageRequest);
+	}
+	
+	public Page<Cliente> search(String nome, List<Integer> ids, Integer page, Integer linesPerPage, String orderBy, String direction){
+		PageRequest pageRequest = PageRequest.of(page, linesPerPage, Direction.valueOf(direction), orderBy);
+		List<Pedido> pedidos = pedidoRepository.findAllById(ids);
+		return repo.search(nome, pedidos, pageRequest);
 	}
 	
 	public Cliente fromDTO(ClienteDTO objDto) {
