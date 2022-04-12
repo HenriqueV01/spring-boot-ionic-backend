@@ -19,6 +19,7 @@ public interface ClienteRepository extends JpaRepository<Cliente, Integer>{
 	@Transactional(readOnly = true)
 	Cliente findByEmail(String email);
 	
+	@Transactional(readOnly = true)
 	@Query("SELECT DISTINCT obj FROM Cliente obj INNER JOIN obj.pedidos ped WHERE obj.nome LIKE %:nome% AND ped IN :pedidos")
 	Page<Cliente> search(@Param("nome") String nome,@Param("pedidos") List<Pedido> pedidos, Pageable pageRequest);
 
